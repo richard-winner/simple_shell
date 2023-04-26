@@ -11,6 +11,7 @@ int main(void)
     ssize_t nread;
     char *args[2];
     int status;
+    pid_t pid;
 
     while (1) {
         printf("$ ");
@@ -28,7 +29,7 @@ int main(void)
         }
         args[0] = line;
         args[1] = NULL;
-        pid_t pid = fork();
+        pid = fork();
         if (pid == -1) {
             perror("fork");
             exit(EXIT_FAILURE);
