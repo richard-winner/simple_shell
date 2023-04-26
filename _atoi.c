@@ -1,73 +1,50 @@
-#include "shell.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/wait.h>
 
-/**
- * interactive - returns true if shell is interactive mode
- * @info: struct address
- *
- * Return: 1 if interactive mode, 0 otherwise
- */
-
-int interactive(info_t *info)
+int main(void)
 {
-return (isatty(STDIN_FILENO) && info->readfd <= 2);
-}
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+    char *args[2];
+    int status;
 
-/**
- * is_delim - checks if character is a delimeter
- * @c: the char to check
- * @delim: the delimeter string
- * Return: 1 if true, 0 if false
- */
-
-int is_delim(char c, char *delim)
-{
-while (*delim)
-if (*delim++ == c)
-return (1);
-return (0);
-}
-
-/**
- * _isalpha - checks for alphabetic character
- * @c: The character to input
- * Return: 1 if c is alphabetic, 0 otherwise
- */
-
-int _isalpha(int c)
-{
-if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-return (1);
-else
-return (0);
-}
-
-/**
- * _atoi - converts a string to an integer
- * @s: the string to be converted
- * Return: 0 if no numbers in string, converted number otherwise
- */
-
-int _atoi(char *s)
-{
-int i, sign = 1, flag = 0, output;
-unsigned int result = 0;
-for (i = 0; s[i] != '\0' && flag != 2; i++)
-{
-if (s[i] == '-')
-sign *= -1;
-
-if (s[i] >= '0' && s[i] <= '9')
-{
-flag = 1;
-result *= 10;
-result += (s[i] - '0');
-}
-else if (flag == 1)
-flag = 2;
-}
-if (sign == -1)
-output = -result;
-else
-output = result;
-return (output);
+    while (1) {
+        printf("$ ");
+        nread = getline(&line, &len, stdin);
+        if (nread == -1) {
+            if (feof(stdin)) {
+                exit(EXIT_SUCCESS);
+            } else {
+                perror("getline");
+                exit(EXIT_FAILURE);
+            }
+        }
+        if (line[nread-1] == '\n') {
+            line[nread-1] = '\0';
+        }
+        args[0] = line;
+        args[1] = NULL;
+        pid_t pid = fork();
+        if (pid == -1) {
+            perror("fork");
+            exit(EXIT_FAILURE);
+        } else if (pid == 0) {
+            /* Child process */
+            if (execve(args[0], args, NULL) == -1) {
+                perror("execve");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            /* Parent process */
+            if (wait(&status) == -1) {
+                perror("wait");
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+    return 0;
 }
